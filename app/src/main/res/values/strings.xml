@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">SmartToastv2</string>
+    <string name="profile1">Add Profile 1</string>
+    <string name="profile2">Add Profile 2</string>
+    <string name="profile3">Add Profile 3</string>
+    <string name="SelectAddProfile">Select a Profile:</string>
+    <string name="ProfileName">" Enter Profile Name"</string>
+    <string name="ProfileNameText">Name:</string>
+    <string name="SaveProfile">SAVE</string>
+</resources>
