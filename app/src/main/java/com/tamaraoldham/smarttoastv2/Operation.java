@@ -9,6 +9,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 //Operation Screen where it loads profile information
 //Option to edit or delete
@@ -45,11 +51,20 @@ public class Operation extends AppCompatActivity {
     private CountDownTimer delayCountDownTimer;
     private CountDownTimer cookCountDownTimer;
 
+    String server_url = "http://192.168.1.90/";
+    TextView response; //error message for ESP8266
+
+    boolean isCancelled = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_operation);
+
+        //enable buttons as default... don't put these here... it gets mad :(
+        //AddDelay.setEnabled(true);
+        //EditProfile.setEnabled(true);
 
         //read out profile number
         Intent intentEdit = getIntent();
@@ -69,6 +84,8 @@ public class Operation extends AppCompatActivity {
         startOperation = findViewById(R.id.startButton);
         //Add Delay Button
         AddDelay = findViewById(R.id.AddDelay);
+        //error response for ESP8266
+        response = findViewById(R.id.response);
 
         cookTimer = 30; //test value
 
@@ -90,21 +107,6 @@ public class Operation extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                //test concatenating string information that will be sent to ESP
-                //code 1 = profile; code + cooktime + delaytime + offset
-
-                //profile = "1" + delaytime;//use this for volley....
-                //Use volley to send "profile" to webserver
-
-                //Intent intentStart = new Intent(Operation.this, OperationRUN.class);
-                //Bundle extras = new Bundle();
-
-                //send over delay time and profile number
-                //extras.putInt("DELAY_TIME", delaytime);
-                //extras.putString("PROFILE", profileValue);
-                //intentStart.putExtras(extras);
-                //startActivity(intentStart);
-
                 startCancel();
 
             }
@@ -114,7 +116,7 @@ public class Operation extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Operation.this, EditProfile2.class);
-                intent.putExtra("PROFILE","profile1");
+                intent.putExtra("PROFILE", profileValue);
                 startActivity(intent);
             }
         });
@@ -174,25 +176,27 @@ public class Operation extends AppCompatActivity {
                 //send profile information over to MCU **NEED TO ADD VOLLEY HERE
                 startOperation.setText(CANCEL); //set button to display cancel
                 //disable other buttons
+                AddDelay.setEnabled(false);
+                EditProfile.setEnabled(false);
                 startTimers();
                 timeRunning = true;
             }
             else{
                 //send cancel information over to MCU **NEED TO ADD VOLLEY HERE
-                startOperation.setText(START); //set button to display start
-                //re-enable other buttons
-                //return to main menu
-                Intent intent = new Intent(Operation.this, MainMenu.class);
-                startActivity(intent);
+                sendCancel();
+                isCancelled = true;
+
             }
 
         }
 
         public void startTimers(){ //used to determine which timer to start, delay or cook
             if (delaytime > 0){
+                sendProfile();
                 startDelay();
             }
             else{
+                sendProfile();
                 startCook();
             }
 
@@ -206,6 +210,14 @@ public class Operation extends AppCompatActivity {
                 public void onTick(long millisUntilFinished) {
                     delayMillisecondsLeft = millisUntilFinished;
                     updateDelayTimer();
+
+                    if (isCancelled){
+                        cancel();
+                        startOperation.setText(START); //set button to display start
+                        Intent intent = new Intent(Operation.this, MainMenu.class);
+                        startActivity(intent);
+
+                    }
                 }
 
                 @Override
@@ -236,6 +248,14 @@ public class Operation extends AppCompatActivity {
                 public void onTick(long millisUntilFinished) {
                     cookMillisecondsLeft = millisUntilFinished;
                     updateCookTimer();
+
+                    if (isCancelled){
+                        cancel();
+                        startOperation.setText(START);
+                        Intent intent = new Intent(Operation.this, MainMenu.class);
+                        startActivity(intent);
+
+                    }
                 }
 
                 @Override
@@ -258,6 +278,54 @@ public class Operation extends AppCompatActivity {
             }
             CookTime.setText(cook);
         }
+
+        public void sendProfile(){
+            final RequestQueue requestQueue = Volley.newRequestQueue(Operation.this);
+            profile = server_url + "profile?profile=" + "1" + delaytime + cookTimer + "X";
+
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, profile, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+
+                    requestQueue.stop();
+                    //startDelay(); //start operation of toaster
+
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+
+                    response.setText("ESP8266 ERROR");
+                    error.printStackTrace();
+                    requestQueue.stop();
+                    //consider restarting activity for future...
+                }
+            });
+            requestQueue.add(stringRequest);
+        }
+
+        public void sendCancel(){
+            final RequestQueue requestQueue = Volley.newRequestQueue(Operation.this);
+            profile = server_url + "cancel";
+
+            StringRequest stringRequest = new StringRequest(Request.Method.GET, profile, new Response.Listener<String>() {
+                @Override
+                public void onResponse(String response) {
+                    requestQueue.stop();
+
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+
+                    response.setText("ESP8266 ERROR");
+                    error.printStackTrace();
+                    requestQueue.stop();
+                    //consider restarting activity for future...
+                }
+            });
+        }
+
 
 }
 
