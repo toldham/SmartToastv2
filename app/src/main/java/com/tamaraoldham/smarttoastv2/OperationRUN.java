@@ -22,8 +22,8 @@ public class OperationRUN extends AppCompatActivity {
     Button keepWarmButton;
     Button raiseToastButton;
     String profile;
-    String server_url2 = "http://192.168.1.87/";
-    //String server_url2 = "http://192.168.43.197/";
+    //String server_url2 = "http://192.168.1.87/";
+    String server_url2 = "http://192.168.43.197/";
     TextView response; //error message for ESP8266
 
     SharedPreferences sharedp1;
@@ -86,7 +86,7 @@ public class OperationRUN extends AppCompatActivity {
 
     public void sendKeepWarmRequest(){
             final RequestQueue requestQueue = Volley.newRequestQueue(OperationRUN.this);
-            profile = server_url2 + "profile?profile=" + "3" + "00000" + "x";
+            profile = server_url2 + "profile2?profile=" + "3" + "00000" + "x";
 
             StringRequest stringRequest = new StringRequest(Request.Method.GET, profile, new Response.Listener<String>() {
                 @Override
@@ -109,7 +109,7 @@ public class OperationRUN extends AppCompatActivity {
 
     public void sendRaiseToastRequest(){
             final RequestQueue requestQueue = Volley.newRequestQueue(OperationRUN.this);
-            profile = server_url2 + "profile?profile=" + "4" + "00000" + "x";
+            profile = server_url2 + "profile2?profile=" + "4" + "00000" + "x";
 
             StringRequest stringRequest = new StringRequest(Request.Method.GET, profile, new Response.Listener<String>() {
                 @Override
